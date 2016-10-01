@@ -77,7 +77,7 @@ private:
 
 
 WindowsError InjectDll(HANDLE processHandle, const std::wstring& dllPath,
-  const std::string& injectFunctionName, const std::string& errorDumpPath);
+  const std::string& injectFunctionName);
 
 
 }  // namespace sbat

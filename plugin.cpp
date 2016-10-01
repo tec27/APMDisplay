@@ -6,6 +6,7 @@
 #include "./win_helpers.h"
 #include "./func_hook.h"
 
+using sbat::InjectDll;
 using sbat::ScopedVirtualProtect;
 using std::string;
 using std::unique_ptr;
@@ -24,6 +25,8 @@ static const char* kUpdateUrl = "http://tec27.com/apmdisplay/";
 
 #define BWL_FUNCTION extern "C" __declspec(dllexport)
 
+BWL_FUNCTION void OnInject();
+
 struct BwLauncherData {
   uint32 pluginApi;
   int32 starcraftBuild;
@@ -38,24 +41,39 @@ BWL_FUNCTION void GetPluginAPI(BwLauncherData* data) {
   data->runsOutsideBwlauncher = false;
 }
 
-BWL_FUNCTION void GetData(char* name, char* description, char* update_url) {
+BWL_FUNCTION void GetData(char* name, char* description, char* updateUrl) {
   strcpy_s(name, 1024, kPluginName);
   strcpy_s(description, 8192, kDescription);
-  strcpy_s(update_url, 1024, kUpdateUrl);
+  strcpy_s(updateUrl, 1024, kUpdateUrl);
 }
 
-BWL_FUNCTION bool ApplyPatchSuspended(HANDLE process_handle, uint32 process_id) {
-  return true;
-}
+BWL_FUNCTION bool ApplyPatchSuspended(HANDLE processHandle, uint32 processId) {
+  HMODULE selfHandle;
+  wchar_t selfPath[MAX_PATH];
+  BOOL gotHandle = GetModuleHandleExW(
+    GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+    reinterpret_cast<LPCWSTR>(&OnInject), &selfHandle);
+  if (!gotHandle) {
+    return false;
+  }
+  DWORD copied = GetModuleFileNameW(selfHandle, selfPath, sizeof(selfPath) / sizeof(wchar_t));
+  if (copied == 0) {
+    return false;
+  }
 
-BWL_FUNCTION bool ApplyPatch(HANDLE process_handle, uint32 process_id) {
-  return true;
-}
-
-BOOL WINAPI DllMain(HMODULE module_handle, DWORD reason, LPVOID reserved) {
-  if (reason == DLL_PROCESS_DETACH) {
-    // FreeHooks();
+  auto result = InjectDll(processHandle, selfPath, "OnInject");
+  if (result.isError()) {
+    return false;
   }
 
   return true;
+}
+
+BWL_FUNCTION bool ApplyPatch(HANDLE processHandle, uint32 processId) {
+  
+  return true;
+}
+
+BWL_FUNCTION void OnInject() {
+  MessageBoxA(NULL, "Anyone there?", "Hello?", MB_OK);
 }

@@ -164,7 +164,7 @@ const byte injectProc[] = {
 
 
 WindowsError InjectDll(HANDLE processHandle, const wstring& dllPath,
-  const string& injectFunctionName, const string& errorDumpPath) {
+  const string& injectFunctionName) {
   InjectContext context;
   wchar_t* buf = lstrcpynW(context.dllPath, dllPath.c_str(), MAX_PATH);
   if (buf == nullptr) {

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libudis86">
+      <UniqueIdentifier>{2B273D47-E963-5031-0A5B-7AF5C1ACECF9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="libudis86\decode.c">
+      <Filter>libudis86</Filter>
+    </ClCompile>
+    <ClCompile Include="libudis86\itab.c">
+      <Filter>libudis86</Filter>
+    </ClCompile>
+    <ClCompile Include="libudis86\syn.c">
+      <Filter>libudis86</Filter>
+    </ClCompile>
+    <ClCompile Include="libudis86\syn-att.c">
+      <Filter>libudis86</Filter>
+    </ClCompile>
+    <ClCompile Include="libudis86\syn-intel.c">
+      <Filter>libudis86</Filter>
+    </ClCompile>
+    <ClCompile Include="libudis86\udis86.c">
+      <Filter>libudis86</Filter>
+    </ClCompile>
+    <ClInclude Include="udis86.h"/>
+    <ClInclude Include="libudis86\decode.h">
+      <Filter>libudis86</Filter>
+    </ClInclude>
+    <ClInclude Include="libudis86\extern.h">
+      <Filter>libudis86</Filter>
+    </ClInclude>
+    <ClInclude Include="libudis86\itab.h">
+      <Filter>libudis86</Filter>
+    </ClInclude>
+    <ClInclude Include="libudis86\syn.h">
+      <Filter>libudis86</Filter>
+    </ClInclude>
+    <ClInclude Include="libudis86\types.h">
+      <Filter>libudis86</Filter>
+    </ClInclude>
+    <ClInclude Include="libudis86\udint.h">
+      <Filter>libudis86</Filter>
+    </ClInclude>
+    <None Include="udis86.gyp"/>
+  </ItemGroup>
+</Project>

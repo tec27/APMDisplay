@@ -356,7 +356,7 @@ bool Detour::Inject() {
   }
 
   ScopedVirtualProtect protect(hook_location_, hook_size_, PAGE_EXECUTE_READWRITE);
-  if (protect.has_errors()) {
+  if (protect.hasErrors()) {
     return false;
   }
 
@@ -371,7 +371,7 @@ bool Detour::Restore() {
   }
 
   ScopedVirtualProtect protect(hook_location_, hook_size_, PAGE_EXECUTE_READWRITE);
-  if (protect.has_errors()) {
+  if (protect.hasErrors()) {
     return false;
   }
 

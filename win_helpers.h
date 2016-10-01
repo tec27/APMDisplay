@@ -12,9 +12,9 @@ namespace sbat {
 // Type for simpler VirtualProtect -> restore old protection usage.
 class ScopedVirtualProtect {
 public:
-  ScopedVirtualProtect(void* address, size_t size, uint32 new_protection);
+  ScopedVirtualProtect(void* address, size_t size, uint32 newProtection);
   ~ScopedVirtualProtect();
-  bool has_errors() const;
+  bool hasErrors() const;
 private:
   // Disable copying
   ScopedVirtualProtect(const ScopedVirtualProtect&) = delete;
@@ -22,40 +22,25 @@ private:
 
   void* address_;
   size_t size_;
-  uint32 old_protection_;
-  bool has_errors_;
+  uint32 oldProtection_;
+  bool hasErrors_;
 };
 
 class ScopedVirtualAlloc {
 public:
-  ScopedVirtualAlloc(HANDLE process_handle, void* address, size_t size, uint32 allocation_type,
+  ScopedVirtualAlloc(HANDLE processHandle, void* address, size_t size, uint32 allocationType,
      uint32 protection);
   ~ScopedVirtualAlloc();
 
-  bool has_errors() const { return alloc_ == nullptr; }
+  bool hasErrors() const { return alloc_ == nullptr; }
   void* get() const { return alloc_; }
 private:
   // Disable copying
   ScopedVirtualAlloc(const ScopedVirtualAlloc&) = delete;
   ScopedVirtualAlloc& operator=(const ScopedVirtualAlloc&) = delete;
 
-  HANDLE process_handle_;
+  HANDLE processHandle_;
   void* alloc_;
-};
-
-class WinHdc {
-public:
-  explicit WinHdc(HWND window);
-  ~WinHdc();
-
-  HDC get() const { return hdc_; }
-private:
-  // Disable copying
-  WinHdc(const WinHdc&) = delete;
-  WinHdc& operator=(const WinHdc&) = delete;
-
-  HWND window_;
-  HDC hdc_;
 };
 
 class WinHandle {
@@ -77,10 +62,10 @@ private:
 
 class WindowsError {
 public:
-  WindowsError(std::string location, uint32 error_code);
+  WindowsError(std::string location, uint32 errorCode);
   WindowsError() : WindowsError("", 0) {}
 
-  bool is_error() const;
+  bool isError() const;
   uint32 code() const;
   std::string message() const;
   std::string location() const;
@@ -90,28 +75,9 @@ private:
   std::string location_;
 };
 
-class Process {
-public:
-  Process(const std::wstring& app_path, const std::wstring& arguments, bool launch_suspended,
-      const std::wstring& current_dir, const std::vector<std::wstring>& environment);
-  ~Process();
-  bool has_errors() const;
-  WindowsError error() const;
 
-  WindowsError InjectDll(const std::wstring& dll_path, const std::string& inject_function_name,
-    const std::string& error_dump_path);
-  WindowsError Resume();
-  WindowsError Terminate();
-  WindowsError WaitForExit(uint32 max_wait_ms = INFINITE, bool* timed_out = nullptr);
-  WindowsError GetExitCode(uint32* exit_code);
-private:
-  // Disable copying
-  Process(const Process&) = delete;
-  Process& operator=(const Process&) = delete;
+WindowsError InjectDll(HANDLE processHandle, const std::wstring& dllPath,
+  const std::string& injectFunctionName, const std::string& errorDumpPath);
 
-  WinHandle process_handle_;
-  WinHandle thread_handle_;
-  WindowsError error_;
-};
 
 }  // namespace sbat

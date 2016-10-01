@@ -2,10 +2,14 @@
 #include <memory>
 #include <string>
 
+#include "./brood_war.h"
+#include "./game_monitor.h"
+#include "./func_hook.h"
 #include "./types.h"
 #include "./win_helpers.h"
-#include "./func_hook.h"
 
+
+using apm::GameMonitor;
 using sbat::InjectDll;
 using sbat::ScopedVirtualProtect;
 using std::string;
@@ -74,6 +78,9 @@ BWL_FUNCTION bool ApplyPatch(HANDLE processHandle, uint32 processId) {
   return true;
 }
 
+unique_ptr<GameMonitor> gameMonitor = unique_ptr<GameMonitor>();
+
 BWL_FUNCTION void OnInject() {
-  MessageBoxA(NULL, "Anyone there?", "Hello?", MB_OK);
+  gameMonitor.reset(new GameMonitor(apm::CreateV1161()));
+  gameMonitor->Start();
 }

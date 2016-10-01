@@ -1,13 +1,15 @@
-#include "win_helpers.h"
+#include "./win_helpers.h"
 
-#include <dbghelp.h>
 #include <Windows.h>
+#include <assert.h>
+#include <dbghelp.h>
+#include <process.h>
 #include <UserEnv.h>
 #include <algorithm>
 #include <iterator>
 #include <string>
 #include <vector>
-#include "types.h"
+#include "./types.h"
 
 using std::string;
 using std::wstring;
@@ -108,6 +110,52 @@ string WindowsError::message() const {
     delete[] messageBuffer;
     return messageBuffer;
   }
+}
+
+WindowsThread::WindowsThread()
+  : handle_(INVALID_HANDLE_VALUE),
+    threadId_(0),
+    started_(false),
+    terminated_(true) {
+}
+
+WindowsThread::~WindowsThread() {
+}
+
+void WindowsThread::Start() {
+  if (started_ || handle_ != INVALID_HANDLE_VALUE) {
+    return;
+  }
+
+  uint32 threadId;
+  handle_ = reinterpret_cast<HANDLE>(
+    _beginthreadex(NULL, 0, WindowsThread::ThreadProc, this, 0, &threadId));
+  threadId_ = threadId;
+}
+
+void WindowsThread::Terminate() {
+  terminated_ = true;
+}
+
+void WindowsThread::Run() {
+  assert(!started_);
+  assert(terminated_);
+  Setup();
+  started_ = true;
+  terminated_ = false;
+
+  Execute();
+
+  started_ = false;
+  terminated_ = true;
+  handle_ = INVALID_HANDLE_VALUE;
+  threadId_ = 0;
+}
+
+unsigned __stdcall WindowsThread::ThreadProc(void* arg) {
+  WindowsThread* thread = reinterpret_cast<WindowsThread*>(arg);
+  thread->Run();
+  return 1;
 }
 
 struct InjectContext {

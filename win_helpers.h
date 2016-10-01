@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <Wtsapi32.h>
+#include <atomic>
 #include <string>
 #include <vector>
 #include "types.h"
@@ -73,6 +74,37 @@ public:
 private:
   uint32 code_;
   std::string location_;
+};
+
+class WindowsThread {
+public:
+  WindowsThread();
+  virtual ~WindowsThread();
+
+  HANDLE handle() const { return handle_; }
+  uint32 id() const { return threadId_; }
+  bool isStarted() { return started_;  }
+  bool isTerminated() { return terminated_; }
+
+  void Start();
+  void Terminate();
+
+protected:
+  virtual void Setup() {}
+  virtual void Execute() {}
+
+private:
+  // Disable copying
+  WindowsThread(const WindowsThread&) = delete;
+  WindowsThread& operator=(const WindowsThread&) = delete;
+
+  void Run();
+  static unsigned __stdcall ThreadProc(void* arg);
+
+  std::atomic<HANDLE> handle_;
+  std::atomic<uint32> threadId_;
+  std::atomic<bool> started_;
+  std::atomic<bool> terminated_;
 };
 
 

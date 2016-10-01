@@ -1,4 +1,4 @@
-#include "func_hook.h"
+#include "./func_hook.h"
 
 #include <assert.h>
 #include <Windows.h>
@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-#include "deps/udis86/udis86.h"
-#include "types.h"
-#include "win_helpers.h"
+#include "./deps/udis86/udis86.h"
+#include "./types.h"
+#include "./win_helpers.h"
 
 namespace sbat {
 using std::shared_ptr;

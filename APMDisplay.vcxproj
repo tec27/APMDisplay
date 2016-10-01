@@ -19,12 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="brood_war.cpp" />
     <ClCompile Include="func_hook.cpp" />
+    <ClCompile Include="game_monitor.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="win_helpers.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="brood_war.h" />
     <ClInclude Include="func_hook.h" />
+    <ClInclude Include="game_monitor.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="win_helpers.h" />
   </ItemGroup>

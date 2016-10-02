@@ -61,7 +61,11 @@ public:
   };
 
   explicit Detour(const Builder& builder);
+  Detour();
   ~Detour();
+
+  Detour(Detour&& d);
+  Detour& operator=(Detour&& d);
 
   bool Inject();
   bool Restore();

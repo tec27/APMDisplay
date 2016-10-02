@@ -242,6 +242,15 @@ shared_ptr<Detour::AllocBlock> Detour::AllocSpace(size_t trampoline_size) {
   return current_block_;
 }
 
+Detour::Detour()
+  : hook_location_(nullptr),
+    hook_size_(0),
+    trampoline_block_(nullptr),
+    original_(nullptr),
+    hooked_(nullptr),
+    injected_(false) {
+}
+
 Detour::Detour(const Detour::Builder& builder)
   : hook_location_(builder.hook_location_),
     hook_size_(0),
@@ -350,8 +359,31 @@ Detour::~Detour() {
   }
 }
 
+Detour::Detour(Detour&& d)
+  : hook_location_(d.hook_location_),
+  hook_size_(d.hook_size_),
+  trampoline_block_(std::move(d.trampoline_block_)),
+  original_(std::move(d.original_)),
+  hooked_(std::move(d.hooked_)),
+  injected_(d.injected_) {
+  d.hook_location_ = nullptr;
+  d.hook_size_ = 0;
+  d.injected_ = false;
+}
+
+Detour& Detour::operator=(Detour&& d) {
+  std::swap(hook_location_, d.hook_location_);
+  std::swap(hook_size_, d.hook_size_);
+  std::swap(trampoline_block_, d.trampoline_block_);
+  std::swap(original_, d.original_);
+  std::swap(hooked_, d.hooked_);
+  std::swap(injected_, d.injected_);
+
+  return *this;
+}
+
 bool Detour::Inject() {
-  if (injected_) {
+  if (!hook_location_ || injected_) {
     return false;
   }
 

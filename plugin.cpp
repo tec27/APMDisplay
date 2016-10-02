@@ -81,6 +81,9 @@ BWL_FUNCTION bool ApplyPatch(HANDLE processHandle, uint32 processId) {
 unique_ptr<GameMonitor> gameMonitor = unique_ptr<GameMonitor>();
 
 BWL_FUNCTION void OnInject() {
-  gameMonitor.reset(new GameMonitor(apm::CreateV1161()));
+  apm::DrawFn drawFn = []() {
+    MessageBoxA(NULL, "Drawing!", "Hi", MB_OK);
+  };
+  gameMonitor.reset(new GameMonitor(apm::CreateV1161(drawFn)));
   gameMonitor->Start();
 }

@@ -9,7 +9,7 @@
 namespace apm {
 
 GameMonitor::GameMonitor(BroodWar bw)
-  : bw_(bw),
+  : bw_(std::move(bw)),
     wasInGame_(false) {
 }
 
@@ -20,12 +20,12 @@ void GameMonitor::Execute() {
   while (!isTerminated()) {
     if (wasInGame_ && !bw_.isInGame) {
       wasInGame_ = false;
-      MessageBoxA(NULL, "omg why'd you leave", "hi", MB_OK);
+      bw_.RestoreHooks();
     } else if (!wasInGame_ && bw_.isInGame) {
       wasInGame_ = true;
-      MessageBoxA(NULL, "way to get in that game", "hi", MB_OK);
+      bw_.InjectHooks();
     }
-    Sleep(100);
+    Sleep(200);
   }
 }
 

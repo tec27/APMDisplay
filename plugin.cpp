@@ -23,7 +23,7 @@ static const int32 kPluginMinor = 0;
 static const char* kPluginName = "APMDisplay (1.16.1)";
 static const char* kDescription =
   "APMDisplay v1.0\r\n\r\n"
-  "Displays a live APM overlay ingame, as well as a local and game time clocks.\r\n\r\n"
+  "Displays a live APM overlay ingame, as well as local and game time clocks.\r\n\r\n"
   "by tec27";
 static const char* kUpdateUrl = "http://tec27.com/apmdisplay/";
 
@@ -84,6 +84,9 @@ BWL_FUNCTION void OnInject() {
   apm::DrawFn drawFn = []() {
     gameMonitor->Draw();
   };
-  gameMonitor.reset(new GameMonitor(apm::CreateV1161(drawFn)));
+  apm::RefreshFn refreshFn = []() {
+    gameMonitor->RefreshScreen();
+  };
+  gameMonitor.reset(new GameMonitor(apm::CreateV1161(drawFn, refreshFn)));
   gameMonitor->Start();
 }

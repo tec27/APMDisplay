@@ -14,6 +14,7 @@ public:
   virtual ~GameMonitor();
 
   void Draw();
+  void RefreshScreen();
 
 protected:
   virtual void Execute();

@@ -39,7 +39,10 @@ struct BroodWar {
   void RestoreHooks();
 
   sbat::Detour drawDetour;
+  sbat::Detour refreshScreenDetour;
+
   DataOffset<bool> isInGame;
+  DataOffset<uint32> gameTimeTicks;
 
   DataOffset<BwFont> curFont;
   DataOffset<BwFont> fontUltraLarge;
@@ -50,17 +53,22 @@ struct BroodWar {
 
   #undef DrawText // BILL GATES WHY
   std::function<void(uint32 x, uint32 y, const std::string& text)> DrawText;
+  std::function<bool()> RefreshGameLayer;
 };
 
 using DrawFn = void(__stdcall*)();
+using RefreshFn = void(__stdcall*)();
 
-inline BroodWar CreateV1161(DrawFn drawFunction) {
+inline BroodWar CreateV1161(DrawFn drawFunction, RefreshFn refreshFunction) {
   BroodWar bw;
 
   bw.drawDetour = std::move(sbat::Detour(sbat::Detour::Builder()
     .At(0x004BD614).To(drawFunction).RunningOriginalCodeBefore()));
+  bw.refreshScreenDetour = std::move(sbat::Detour(sbat::Detour::Builder()
+    .At(0x004D98DE).To(refreshFunction).RunningOriginalCodeBefore()));
 
   bw.isInGame.reset(0x006D11EC);
+  bw.gameTimeTicks.reset(0x0057F23C);
 
   bw.curFont.reset(0x006D5DDC);
   bw.fontUltraLarge.reset(0x006CE100);
@@ -87,6 +95,8 @@ inline BroodWar CreateV1161(DrawFn drawFunction) {
       popad
     }
   };
+  using RefreshGameLayerFunc = bool(__cdecl*)();
+  bw.RefreshGameLayer = reinterpret_cast<RefreshGameLayerFunc>(0x004BD350);
 
   return bw;
 }

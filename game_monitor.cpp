@@ -29,12 +29,27 @@ void GameMonitor::Execute() {
   }
 }
 
+const uint32 ANIM_TIME_MILLIS = 3000;
+
 void GameMonitor::Draw() {
   BwFont backupFont = bw_.curFont;
   bw_.SetFont(bw_.fontUltraLarge);
-  bw_.DrawText(20, 20, "Hello world!");
+
+  uint32 curTimeMillis = bw_.gameTimeTicks * 42;
+  bool backwards = (curTimeMillis / ANIM_TIME_MILLIS) % 2 == 1;
+  double animProgress =
+      (curTimeMillis % ANIM_TIME_MILLIS) / (double) ANIM_TIME_MILLIS;
+  uint32 xPos = (uint32) (animProgress * 510);
+  if (backwards) {
+    xPos = 510 - xPos;
+  }
+  bw_.DrawText(xPos, 20, "Hello world!");
 
   bw_.SetFont(backupFont);
+}
+
+void GameMonitor::RefreshScreen() {
+  bw_.RefreshGameLayer();
 }
 
 } // namespace apm

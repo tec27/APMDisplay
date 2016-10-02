@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 #include "./func_hook.h"
 #include "./types.h"
@@ -24,6 +25,8 @@ private:
   uintptr_t offset_;
 };
 
+using BwFont = uintptr_t;
+
 struct BroodWar {
   BroodWar() = default;
   BroodWar(BroodWar&& bw) = default;
@@ -37,6 +40,16 @@ struct BroodWar {
 
   sbat::Detour drawDetour;
   DataOffset<bool> isInGame;
+
+  DataOffset<BwFont> curFont;
+  DataOffset<BwFont> fontUltraLarge;
+  DataOffset<BwFont> fontLarge;
+  DataOffset<BwFont> fontNormal;
+  DataOffset<BwFont> fontMini;
+  std::function<void(BwFont)> SetFont;
+
+  #undef DrawText // BILL GATES WHY
+  std::function<void(uint32 x, uint32 y, const std::string& text)> DrawText;
 };
 
 using DrawFn = void(__stdcall*)();
@@ -48,6 +61,32 @@ inline BroodWar CreateV1161(DrawFn drawFunction) {
     .At(0x004BD614).To(drawFunction).RunningOriginalCodeBefore()));
 
   bw.isInGame.reset(0x006D11EC);
+
+  bw.curFont.reset(0x006D5DDC);
+  bw.fontUltraLarge.reset(0x006CE100);
+  bw.fontLarge.reset(0x006CE0FC);
+  bw.fontNormal.reset(0x006CE0F8);
+  bw.fontMini.reset(0x006CE0F4);
+
+  using SetFontFunc = void(__thiscall*)(BwFont font);
+  bw.SetFont = [](BwFont font) {
+    const auto BwSetFont = reinterpret_cast<SetFontFunc>(0x0041FB30);
+    BwSetFont(font);
+  };
+  using DrawTextFunc = bool(__stdcall*)(uint32 y);
+  bw.DrawText = [](uint32 x, uint32 y, const std::string& text) {
+    const auto BwDrawText = reinterpret_cast<DrawTextFunc>(0x004202B0);
+    const char* textPtr = text.c_str();
+    __asm {
+      pushad
+      mov eax, [textPtr]
+      mov esi, x
+      push y
+      mov ecx, [BwDrawText]
+      call ecx
+      popad
+    }
+  };
 
   return bw;
 }

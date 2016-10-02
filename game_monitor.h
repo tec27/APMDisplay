@@ -13,6 +13,8 @@ public:
   explicit GameMonitor(BroodWar bw);
   virtual ~GameMonitor();
 
+  void Draw();
+
 protected:
   virtual void Execute();
 

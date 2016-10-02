@@ -29,4 +29,12 @@ void GameMonitor::Execute() {
   }
 }
 
+void GameMonitor::Draw() {
+  BwFont backupFont = bw_.curFont;
+  bw_.SetFont(bw_.fontUltraLarge);
+  bw_.DrawText(20, 20, "Hello world!");
+
+  bw_.SetFont(backupFont);
+}
+
 } // namespace apm

@@ -82,7 +82,7 @@ unique_ptr<GameMonitor> gameMonitor = unique_ptr<GameMonitor>();
 
 BWL_FUNCTION void OnInject() {
   apm::DrawFn drawFn = []() {
-    MessageBoxA(NULL, "Drawing!", "Hi", MB_OK);
+    gameMonitor->Draw();
   };
   gameMonitor.reset(new GameMonitor(apm::CreateV1161(drawFn)));
   gameMonitor->Start();

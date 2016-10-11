@@ -27,13 +27,17 @@ private:
 
   void UpdateLocalTime();
   void DrawLocalTime();
+  void UpdateGameTime();
+  void DrawGameTime();
 
   BroodWar bw_;
   // Access only on GameMonitor thread
   bool wasInGame_;
   // Acccess only on BW render thread
-  std::array<char,128> cachedLocalTime_;
+  std::array<char, 128> cachedLocalTime_;
   uint64 localTimeValidUntil_;
+  std::array<char, 128> cachedGameTime_;
+  uint32 gameTimeValidUntil_;
 };
 
 }  // namespace apm

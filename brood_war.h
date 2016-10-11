@@ -12,7 +12,7 @@ template <typename T>
 class DataOffset {
 public:
   inline constexpr DataOffset() : offset_(0xDEADDEAD) {}
-  inline constexpr DataOffset(uintptr_t offset) : offset_(offset) {}
+  inline constexpr explicit DataOffset(uintptr_t offset) : offset_(offset) {}
   ~DataOffset() {}
 
   inline void reset(uintptr_t offset) { offset_ = offset; }
@@ -43,6 +43,7 @@ struct BroodWar {
 
   DataOffset<bool> isInGame;
   DataOffset<uint32> gameTimeTicks;
+  DataOffset<uint32> lastTextWidth;
 
   DataOffset<BwFont> curFont;
   DataOffset<BwFont> fontUltraLarge;
@@ -54,6 +55,7 @@ struct BroodWar {
   #undef DrawText // BILL GATES WHY
   std::function<void(uint32 x, uint32 y, const std::string& text)> DrawText;
   std::function<bool()> RefreshGameLayer;
+  std::function<uint32(const BroodWar& bw, const std::string& text)> GetTextWidth;
 };
 
 using DrawFn = void(__stdcall*)();
@@ -69,6 +71,7 @@ inline BroodWar CreateV1161(DrawFn drawFunction, RefreshFn refreshFunction) {
 
   bw.isInGame.reset(0x006D11EC);
   bw.gameTimeTicks.reset(0x0057F23C);
+  bw.lastTextWidth.reset(0x006CE108);
 
   bw.curFont.reset(0x006D5DDC);
   bw.fontUltraLarge.reset(0x006CE100);
@@ -97,6 +100,21 @@ inline BroodWar CreateV1161(DrawFn drawFunction, RefreshFn refreshFunction) {
   };
   using RefreshGameLayerFunc = bool(__cdecl*)();
   bw.RefreshGameLayer = reinterpret_cast<RefreshGameLayerFunc>(0x004BD350);
+  using GetTextWidthFunc = bool(__cdecl*)();
+  bw.GetTextWidth = [](const BroodWar& bw, const std::string& text) {
+    const auto BwGetTextWidth = reinterpret_cast<GetTextWidthFunc>(0x0041F920);
+    const char* textPtr = text.c_str();
+    bw.lastTextWidth = 0;
+    __asm {
+      pushad
+      mov eax, [textPtr]
+      mov ecx, [BwGetTextWidth]
+      call ecx
+      popad
+    }
+
+    return bw.lastTextWidth;
+  };
 
   return bw;
 }

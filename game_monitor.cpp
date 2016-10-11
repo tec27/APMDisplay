@@ -1,6 +1,7 @@
 #include "game_monitor.h"
 
 #include <Windows.h>
+#include <string>
 
 #include "./brood_war.h"
 #include "./types.h"
@@ -8,9 +9,13 @@
 
 namespace apm {
 
+using std::string;
+
 GameMonitor::GameMonitor(BroodWar bw)
   : bw_(std::move(bw)),
-    wasInGame_(false) {
+    wasInGame_(false),
+    cachedLocalTime_(),
+    localTimeValidUntil_(0) {
 }
 
 GameMonitor::~GameMonitor() {
@@ -29,21 +34,50 @@ void GameMonitor::Execute() {
   }
 }
 
-const uint32 ANIM_TIME_MILLIS = 3000;
+void GameMonitor::UpdateLocalTime() {
+  uint64 tickCount = GetTickCount64();
+  if (tickCount <= localTimeValidUntil_) {
+    return;
+  }
+
+  SYSTEMTIME localTime = SYSTEMTIME();
+  GetLocalTime(&localTime);
+  WCHAR wideStr[64];
+  bool success = false;
+  int numChars =
+    GetTimeFormatEx(LOCALE_NAME_USER_DEFAULT, TIME_NOSECONDS, &localTime, nullptr, wideStr, 64);
+  if (numChars != 0) {
+    int numBytes = WideCharToMultiByte(
+      CP_THREAD_ACP, NULL, wideStr, -1, &cachedLocalTime_[0], cachedLocalTime_.size(), NULL, NULL);
+    if (numBytes != 0) {
+      success = true;
+    }    
+  }
+
+  if (!success) {
+    string errorStr = "ERROR";
+    std::copy(errorStr.begin(), errorStr.end(), cachedLocalTime_.begin());
+  }
+
+  tickCount = GetTickCount64();
+  tickCount += (60 - localTime.wSecond) * 1000;
+  localTimeValidUntil_ = tickCount;
+}
+
+const uint32 LOCAL_CLOCK_X = 14;
+const uint32 LOCAL_CLOCK_Y = 284;
+
+void GameMonitor::DrawLocalTime() {
+  bw_.SetFont(bw_.fontLarge);
+  UpdateLocalTime();
+  string localTimeStr = string("\x04") + cachedLocalTime_.data() + "\x01";
+  bw_.DrawText(LOCAL_CLOCK_X, LOCAL_CLOCK_Y, localTimeStr);
+}
 
 void GameMonitor::Draw() {
   BwFont backupFont = bw_.curFont;
-  bw_.SetFont(bw_.fontUltraLarge);
 
-  uint32 curTimeMillis = bw_.gameTimeTicks * 42;
-  bool backwards = (curTimeMillis / ANIM_TIME_MILLIS) % 2 == 1;
-  double animProgress =
-      (curTimeMillis % ANIM_TIME_MILLIS) / (double) ANIM_TIME_MILLIS;
-  uint32 xPos = (uint32) (animProgress * 510);
-  if (backwards) {
-    xPos = 510 - xPos;
-  }
-  bw_.DrawText(xPos, 20, "Hello world!");
+  DrawLocalTime();
 
   bw_.SetFont(backupFont);
 }

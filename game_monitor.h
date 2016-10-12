@@ -16,6 +16,7 @@ public:
 
   void Draw();
   void RefreshScreen();
+  void OnAction(byte actionType);
 
 protected:
   virtual void Execute();
@@ -25,19 +26,30 @@ private:
   GameMonitor(const GameMonitor&) = delete;
   GameMonitor& operator=(const GameMonitor&) = delete;
 
+  void InitGameData();
   void UpdateLocalTime();
   void DrawLocalTime();
   void UpdateGameTime();
   void DrawGameTime();
+  void CalculateApm();
+  void DrawApm();
+
+  uint32 GetDisplayStormId();
+  std::string GetPlayerName(int index);
 
   BroodWar bw_;
   // Access only on GameMonitor thread
   bool wasInGame_;
-  // Acccess only on BW render thread
+
+  // Acccess only on BW game loop thread
   std::array<char, 128> cachedLocalTime_;
   uint64 localTimeValidUntil_;
   std::array<char, 128> cachedGameTime_;
   uint32 gameTimeValidUntil_;
+
+  std::array<double, 12> apmCounter_;
+  std::array<std::string, 12> apmStrings_;
+  uint32 apmCalcTime_;
 };
 
 }  // namespace apm

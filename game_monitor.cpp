@@ -1,6 +1,8 @@
 #include "game_monitor.h"
 
 #include <Windows.h>
+#include <cassert>
+#include <cmath>
 #include <string>
 
 #include "./brood_war.h"
@@ -17,7 +19,10 @@ GameMonitor::GameMonitor(BroodWar bw)
     cachedLocalTime_(),
     localTimeValidUntil_(0),
     cachedGameTime_(),
-    gameTimeValidUntil_(0) {
+    gameTimeValidUntil_(0),
+    apmCounter_(),
+    apmStrings_(),
+    apmCalcTime_(0) {
 }
 
 GameMonitor::~GameMonitor() {
@@ -30,12 +35,21 @@ void GameMonitor::Execute() {
       bw_.RestoreHooks();
     } else if (!wasInGame_ && bw_.isInGame) {
       wasInGame_ = true;
-      localTimeValidUntil_ = 0;
-      gameTimeValidUntil_ = 0;
+      InitGameData();
       bw_.InjectHooks();
     }
     Sleep(200);
   }
+}
+
+void GameMonitor::InitGameData() {
+  localTimeValidUntil_ = 0;
+  gameTimeValidUntil_ = 0;
+  for (size_t i = 0; i < apmCounter_.size(); i++) {
+    apmCounter_[i] = 0;
+    apmStrings_[i] = "";
+  }
+  apmCalcTime_ = 0;
 }
 
 void GameMonitor::UpdateLocalTime() {
@@ -70,7 +84,6 @@ void GameMonitor::UpdateLocalTime() {
 
 const uint32 LOCAL_CLOCK_X = 16;
 const uint32 LOCAL_CLOCK_Y = 284;
-
 void GameMonitor::DrawLocalTime() {
   bw_.SetFont(bw_.fontLarge);
   UpdateLocalTime();
@@ -99,7 +112,6 @@ void GameMonitor::UpdateGameTime() {
 }
 
 const uint32 GAME_CLOCK_Y = 2;
-
 void GameMonitor::DrawGameTime() {
   bw_.SetFont(bw_.fontLarge);
   UpdateGameTime();
@@ -108,17 +120,89 @@ void GameMonitor::DrawGameTime() {
   bw_.DrawText(xPos, GAME_CLOCK_Y, gameTimeStr);
 }
 
+const double APM_INTERVAL = 0.95;  // time after which actions are worth 1/e (in minutes)
+void GameMonitor::CalculateApm() {
+  const uint32 timeMillis = bw_.gameTimeTicks * 42;
+  if (apmCalcTime_ != 0 && timeMillis <= (apmCalcTime_ + 1000)) {
+    return;
+  }
+
+  int32 timeDiff = static_cast<int32>(timeMillis - apmCalcTime_);
+  for (size_t i = 0; i < apmCounter_.size(); i++) {
+    apmCounter_[i] *= std::exp(-timeDiff / (APM_INTERVAL * 60000));
+  }
+  apmCalcTime_ = timeMillis;
+
+  double gameDurationFactor =
+      1 - std::exp(-static_cast<int32>(timeMillis) / (APM_INTERVAL * 60000));
+  if (gameDurationFactor < 0.01) {
+    gameDurationFactor = 0.01;
+  }
+
+  for (size_t i = 0; i < apmCounter_.size(); i++) {
+    string playerName = GetPlayerName(i);
+    bool updated = false;
+    if (!playerName.empty()) {
+      // TODO(tec27): handle obs mode
+      int32 apm = static_cast<int32>(apmCounter_[i] / (APM_INTERVAL * gameDurationFactor));
+      if (i == bw_.myStormId) {
+        apmStrings_[i] = "\x04" "APM: " "\x07" + std::to_string(apm);
+      } else {
+        // TODO(tec27): colorize player names
+        apmStrings_[i] = "\x04" + playerName + ": \x07" + std::to_string(apm);
+      }
+    } else {
+      apmStrings_[i] = "";
+    }
+  }
+}
+
+const uint32 APM_X = 16;
+const uint32 APM_Y = 4;
+void GameMonitor::DrawApm() {
+  bw_.SetFont(bw_.fontNormal);
+  CalculateApm();
+  // TODO(tec27): draw for obs mode
+  if (GetDisplayStormId() < apmStrings_.size()) {
+    bw_.DrawText(APM_X, APM_Y, apmStrings_[GetDisplayStormId()]);
+  }
+}
+
 void GameMonitor::Draw() {
   BwFont backupFont = bw_.curFont;
 
   DrawLocalTime();
   DrawGameTime();
+  DrawApm();
 
   bw_.SetFont(backupFont);
 }
 
 void GameMonitor::RefreshScreen() {
   bw_.RefreshGameLayer();
+}
+
+const byte ACTION_TYPE_KEEPALIVE = 0x37;
+void GameMonitor::OnAction(byte actionType) {
+  if (bw_.activeStormId >= apmCounter_.size() || actionType == ACTION_TYPE_KEEPALIVE) {
+    return;
+  }
+
+  apmCounter_[bw_.activeStormId] += 1;
+}
+
+uint32 GameMonitor::GetDisplayStormId() {
+  if (bw_.isInReplay) {
+    return bw_.selectedStormId > 11 ? 12 : bw_.selectedStormId;
+  } else {
+    return bw_.myStormId;
+  }
+}
+
+string GameMonitor::GetPlayerName(int index) {
+  assert(index >= 0 && index < 12);
+  PlayerInfo* player = &bw_.firstPlayerInfo.get()[index];
+  return std::move(string(player->name));
 }
 
 } // namespace apm

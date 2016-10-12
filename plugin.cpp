@@ -87,6 +87,9 @@ BWL_FUNCTION void OnInject() {
   apm::RefreshFn refreshFn = []() {
     gameMonitor->RefreshScreen();
   };
-  gameMonitor.reset(new GameMonitor(apm::CreateV1161(drawFn, refreshFn)));
+  apm::OnActionFn onActionFn = [](const byte* actionType) {
+    gameMonitor->OnAction(*actionType);
+  };
+  gameMonitor.reset(new GameMonitor(apm::CreateV1161(drawFn, refreshFn, onActionFn)));
   gameMonitor->Start();
 }

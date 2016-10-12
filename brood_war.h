@@ -8,6 +8,15 @@
 
 namespace apm {
 
+struct PlayerInfo {
+  uint32 playerId;
+  uint32 stormId;
+  uint8 type;
+  uint8 race;
+  uint8 team;
+  char name[25];
+};
+
 template <typename T>
 class DataOffset {
 public:
@@ -17,10 +26,12 @@ public:
 
   inline void reset(uintptr_t offset) { offset_ = offset; }
 
+  inline T* get() const { return reinterpret_cast<T*>(offset_); }
   inline operator T() const { return *reinterpret_cast<T*>(offset_); }
   // This can be const because it does not affect the data in this object (only the data it points
   // to)
   inline T operator=(T value) const { return (*reinterpret_cast<T*>(offset_) = value); }
+  
 private:
   uintptr_t offset_;
 };
@@ -40,10 +51,16 @@ struct BroodWar {
 
   sbat::Detour drawDetour;
   sbat::Detour refreshScreenDetour;
+  sbat::Detour onActionDetour;
 
   DataOffset<bool> isInGame;
+  DataOffset<bool> isInReplay;
   DataOffset<uint32> gameTimeTicks;
   DataOffset<uint32> lastTextWidth;
+  DataOffset<uint32> activeStormId;
+  DataOffset<uint32> myStormId;
+  DataOffset<uint32> selectedStormId;
+  DataOffset<PlayerInfo> firstPlayerInfo;
 
   DataOffset<BwFont> curFont;
   DataOffset<BwFont> fontUltraLarge;
@@ -60,18 +77,30 @@ struct BroodWar {
 
 using DrawFn = void(__stdcall*)();
 using RefreshFn = void(__stdcall*)();
+using OnActionFn = void(__stdcall*)(const byte* actionType);
 
-inline BroodWar CreateV1161(DrawFn drawFunction, RefreshFn refreshFunction) {
+inline BroodWar CreateV1161(
+  DrawFn drawFunction, RefreshFn refreshFunction, OnActionFn onActionFunction) {
   BroodWar bw;
 
   bw.drawDetour = std::move(sbat::Detour(sbat::Detour::Builder()
     .At(0x004BD614).To(drawFunction).RunningOriginalCodeBefore()));
   bw.refreshScreenDetour = std::move(sbat::Detour(sbat::Detour::Builder()
     .At(0x004D98DE).To(refreshFunction).RunningOriginalCodeBefore()));
+  bw.onActionDetour = std::move(sbat::Detour(sbat::Detour::Builder()
+    .At(0x00486D8B)
+    .To(onActionFunction)
+    .WithArgument(sbat::RegisterArgument::Ebx) // action type
+    .RunningOriginalCodeAfter()));
 
   bw.isInGame.reset(0x006D11EC);
+  bw.isInReplay.reset(0x006D0F14);
   bw.gameTimeTicks.reset(0x0057F23C);
   bw.lastTextWidth.reset(0x006CE108);
+  bw.activeStormId.reset(0x0051267C);
+  bw.myStormId.reset(0x00512684);
+  bw.selectedStormId.reset(0x05153F8);
+  bw.firstPlayerInfo.reset(0x0057EEE0);
 
   bw.curFont.reset(0x006D5DDC);
   bw.fontUltraLarge.reset(0x006CE100);

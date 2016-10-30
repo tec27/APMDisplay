@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <functional>
+#include <string>
 
 #include "./func_hook.h"
 #include "./types.h"
@@ -49,6 +51,28 @@ struct BroodWar {
   void InjectHooks();
   void RestoreHooks();
 
+  inline std::string GetPlayerName(int index) {
+    assert(index >= 0 && index < 12);
+    PlayerInfo* player = &firstPlayerInfo.get()[index];
+    return std::move(std::string(player->name));
+  }
+  inline uint32 GetBuildingsControlled(int index) {
+    assert(index >= 0 && index < 12);
+    return buildingsControlled.get()[index];
+  }
+  inline uint32 GetPopulation(int index) {
+    assert(index >= 0 && index < 12);
+    return population.get()[index];
+  }
+  inline int32 GetMinerals(int index) {
+    assert(index >= 0 && index < 12);
+    return minerals.get()[index];
+  }
+  inline int32 GetVespene(int index) {
+    assert(index >= 0 && index < 12);
+    return vespene.get()[index];
+  }
+
   sbat::Detour drawDetour;
   sbat::Detour refreshScreenDetour;
   sbat::Detour onActionDetour;
@@ -61,6 +85,10 @@ struct BroodWar {
   DataOffset<uint32> myStormId;
   DataOffset<uint32> selectedStormId;
   DataOffset<PlayerInfo> firstPlayerInfo;
+  DataOffset<uint32> buildingsControlled;
+  DataOffset<uint32> population;
+  DataOffset<uint32> minerals;
+  DataOffset<uint32> vespene;
 
   DataOffset<BwFont> curFont;
   DataOffset<BwFont> fontUltraLarge;
@@ -101,6 +129,10 @@ inline BroodWar CreateV1161(
   bw.myStormId.reset(0x00512684);
   bw.selectedStormId.reset(0x05153F8);
   bw.firstPlayerInfo.reset(0x0057EEE0);
+  bw.buildingsControlled.reset(0x00581F34);
+  bw.population.reset(0x00581E14);
+  bw.minerals.reset(0x0057F0F0);
+  bw.vespene.reset(0x0057F120);
 
   bw.curFont.reset(0x006D5DDC);
   bw.fontUltraLarge.reset(0x006CE100);

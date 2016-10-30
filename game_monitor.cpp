@@ -1,7 +1,6 @@
 #include "game_monitor.h"
 
 #include <Windows.h>
-#include <cassert>
 #include <cmath>
 #include <string>
 
@@ -140,12 +139,11 @@ void GameMonitor::CalculateApm() {
   }
 
   for (size_t i = 0; i < apmCounter_.size(); i++) {
-    string playerName = GetPlayerName(i);
+    string playerName = bw_.GetPlayerName(i);
     bool updated = false;
     if (!playerName.empty()) {
-      // TODO(tec27): handle obs mode
       int32 apm = static_cast<int32>(apmCounter_[i] / (APM_INTERVAL * gameDurationFactor));
-      if (i == bw_.myStormId) {
+      if (i == bw_.myStormId && !IsObsMode()) {
         apmStrings_[i] = "\x04" "APM: " "\x07" + std::to_string(apm);
       } else {
         // TODO(tec27): colorize player names
@@ -159,11 +157,19 @@ void GameMonitor::CalculateApm() {
 
 const uint32 APM_X = 16;
 const uint32 APM_Y = 4;
+const uint32 LINE_SIZE = 12;
 void GameMonitor::DrawApm() {
   bw_.SetFont(bw_.fontNormal);
   CalculateApm();
-  // TODO(tec27): draw for obs mode
-  if (GetDisplayStormId() < apmStrings_.size()) {
+  if (IsObsMode()) {
+    uint32 lineNum = 0;
+    for (size_t i = 0; i < apmStrings_.size(); i++) {
+      if (!apmStrings_[i].empty() && !IsObserver(i)) {
+        bw_.DrawText(APM_X, APM_Y + lineNum * LINE_SIZE, apmStrings_[i]);
+        lineNum++;
+      }
+    }
+  } else if (GetDisplayStormId() < apmStrings_.size()) {
     bw_.DrawText(APM_X, APM_Y, apmStrings_[GetDisplayStormId()]);
   }
 }
@@ -199,10 +205,30 @@ uint32 GameMonitor::GetDisplayStormId() {
   }
 }
 
-string GameMonitor::GetPlayerName(int index) {
-  assert(index >= 0 && index < 12);
-  PlayerInfo* player = &bw_.firstPlayerInfo.get()[index];
-  return std::move(string(player->name));
+bool GameMonitor::IsObsMode() {
+  if (bw_.activeStormId == 0xFFFFFFFF) {
+    return bw_.isInReplay;
+  } else {
+    if (bw_.isInReplay) {
+      return true;
+    }
+
+    uint32 stormId = bw_.myStormId;
+    return IsObserver(stormId);
+  }
+}
+
+bool GameMonitor::IsObserver(uint32 stormId) {
+  // Handles both initial obs (UMS map), and "almost dead" obs, where people played the game but are
+  // now without units and allied to people
+  uint32 buildingsControlled = bw_.GetBuildingsControlled(stormId);
+  uint32 population = bw_.GetPopulation(stormId);
+  int32 minerals = bw_.GetMinerals(stormId);
+  int32 vespene = bw_.GetVespene(stormId);
+  // initial obs/ums
+  return (buildingsControlled <= 1 && population <= 2 && minerals <= 50 && vespene == 0) ||
+    // "almost dead" obs
+    (buildingsControlled <= 1 && population == 0);
 }
 
 } // namespace apm

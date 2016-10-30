@@ -35,7 +35,9 @@ private:
   void DrawApm();
 
   uint32 GetDisplayStormId();
-  std::string GetPlayerName(int index);
+  
+  bool IsObsMode();
+  bool IsObserver(uint32 stormId);
 
   BroodWar bw_;
   // Access only on GameMonitor thread

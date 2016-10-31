@@ -33,11 +33,10 @@ private:
   void DrawGameTime();
   void CalculateApm();
   void DrawApm();
-
-  uint32 GetDisplayStormId();
   
   bool IsObsMode();
-  bool IsObserver(uint32 stormId);
+  bool IsObserver(uint32 player);
+  char PlayerColorToTextColor(uint8 playerColor);
 
   BroodWar bw_;
   // Access only on GameMonitor thread

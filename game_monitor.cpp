@@ -82,9 +82,9 @@ void GameMonitor::UpdateLocalTime() {
 }
 
 const uint32 LOCAL_CLOCK_X = 16;
-const uint32 LOCAL_CLOCK_Y = 284;
+const uint32 LOCAL_CLOCK_Y = 288;
 void GameMonitor::DrawLocalTime() {
-  bw_.SetFont(bw_.fontLarge);
+  bw_.SetFont(bw_.fontNormal);
   UpdateLocalTime();
   string localTimeStr = string("\x04") + cachedLocalTime_.data() + "\x01";
   bw_.DrawText(LOCAL_CLOCK_X, LOCAL_CLOCK_Y, localTimeStr);
@@ -122,7 +122,7 @@ void GameMonitor::DrawGameTime() {
 const double APM_INTERVAL = 0.95;  // time after which actions are worth 1/e (in minutes)
 void GameMonitor::CalculateApm() {
   const uint32 timeMillis = bw_.gameTimeTicks * 42;
-  if (apmCalcTime_ != 0 && timeMillis <= (apmCalcTime_ + 1000)) {
+  if (apmCalcTime_ != 0 && timeMillis <= (apmCalcTime_ + 500)) {
     return;
   }
 
@@ -140,14 +140,15 @@ void GameMonitor::CalculateApm() {
 
   for (size_t i = 0; i < apmCounter_.size(); i++) {
     string playerName = bw_.GetPlayerName(i);
-    bool updated = false;
     if (!playerName.empty()) {
       int32 apm = static_cast<int32>(apmCounter_[i] / (APM_INTERVAL * gameDurationFactor));
-      if (i == bw_.myStormId && !IsObsMode()) {
+      if (i == bw_.myPlayerId && !IsObsMode()) {
         apmStrings_[i] = "\x04" "APM: " "\x07" + std::to_string(apm);
       } else {
-        // TODO(tec27): colorize player names
-        apmStrings_[i] = "\x04" + playerName + ": \x07" + std::to_string(apm);
+        uint8 playerColor = bw_.GetPlayerColor(i);
+        apmStrings_[i] =
+          PlayerColorToTextColor(playerColor) + playerName + ": \x07" + std::to_string(apm) +
+          " - " + std::to_string(playerColor);
       }
     } else {
       apmStrings_[i] = "";
@@ -169,8 +170,8 @@ void GameMonitor::DrawApm() {
         lineNum++;
       }
     }
-  } else if (GetDisplayStormId() < apmStrings_.size()) {
-    bw_.DrawText(APM_X, APM_Y, apmStrings_[GetDisplayStormId()]);
+  } else if (bw_.myPlayerId < apmStrings_.size()) {
+    bw_.DrawText(APM_X, APM_Y, apmStrings_[bw_.myPlayerId]);
   }
 }
 
@@ -197,14 +198,6 @@ void GameMonitor::OnAction(byte actionType) {
   apmCounter_[bw_.activeStormId] += 1;
 }
 
-uint32 GameMonitor::GetDisplayStormId() {
-  if (bw_.isInReplay) {
-    return bw_.selectedStormId > 11 ? 12 : bw_.selectedStormId;
-  } else {
-    return bw_.myStormId;
-  }
-}
-
 bool GameMonitor::IsObsMode() {
   if (bw_.activeStormId == 0xFFFFFFFF) {
     return bw_.isInReplay;
@@ -213,22 +206,42 @@ bool GameMonitor::IsObsMode() {
       return true;
     }
 
-    uint32 stormId = bw_.myStormId;
-    return IsObserver(stormId);
+    return IsObserver(bw_.myPlayerId);
   }
 }
 
-bool GameMonitor::IsObserver(uint32 stormId) {
+bool GameMonitor::IsObserver(uint32 player) {
   // Handles both initial obs (UMS map), and "almost dead" obs, where people played the game but are
   // now without units and allied to people
-  uint32 buildingsControlled = bw_.GetBuildingsControlled(stormId);
-  uint32 population = bw_.GetPopulation(stormId);
-  int32 minerals = bw_.GetMinerals(stormId);
-  int32 vespene = bw_.GetVespene(stormId);
+  uint32 buildingsControlled = bw_.GetBuildingsControlled(player);
+  uint32 population = bw_.GetPopulation(player);
+  int32 minerals = bw_.GetMinerals(player);
+  int32 vespene = bw_.GetVespene(player);
   // initial obs/ums
   return (buildingsControlled <= 1 && population <= 2 && minerals <= 50 && vespene == 0) ||
     // "almost dead" obs
     (buildingsControlled <= 1 && population == 0);
+}
+
+char GameMonitor::PlayerColorToTextColor(uint8 playerColor) {
+  switch (playerColor) {
+    case 0x6F: return 0x08;
+    case 0xA5: return 0x0E;
+    case 0x9F: return 0x0F;
+    case 0xA4: return 0x10;
+    case 0x9C: return 0x11;
+    case 0x13: return 0x15;
+    case 0x54: return 0x16;
+    case 0x87: return 0x17;
+    case 0xB9: return 0x18;
+    case 0x88: return 0x19;
+    case 0x86: return 0x1B;
+    case 0x33: return 0x1C;
+    case 0x4D: return 0x1D;
+    case 0x9A: return 0x1E;
+    case 0x80: return 0x1F;
+    default: return 0x02;
+  }
 }
 
 } // namespace apm

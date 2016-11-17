@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "./brood_war.h"
 #include "./game_monitor.h"
@@ -14,13 +15,14 @@ using sbat::InjectDll;
 using sbat::ScopedVirtualProtect;
 using std::string;
 using std::unique_ptr;
+using std::vector;
 
 // We don't really work with all versions, but BWL doesn't allow for ranges, nor does Chaos support
 // anything higher than 1.16.1
 static const int32 kStarcraftBuild = -1; 
 static const int32 kPluginMajor = 1;
 static const int32 kPluginMinor = 0;
-static const char* kPluginName = "APMDisplay (1.16.1)";
+static const char* kPluginName = "APMDisplay";
 static const char* kDescription =
   "APMDisplay v1.0\r\n\r\n"
   "Displays a live APM overlay ingame, as well as local and game time clocks.\r\n\r\n"
@@ -80,7 +82,42 @@ BWL_FUNCTION bool ApplyPatch(HANDLE processHandle, uint32 processId) {
 
 unique_ptr<GameMonitor> gameMonitor = unique_ptr<GameMonitor>();
 
+bool VersionsEqual(
+    VS_FIXEDFILEINFO* fileInfo, uint16 majorHi, uint16 majorLo, uint16 minorHi, uint16 minorLo) {
+  return (HIWORD(fileInfo->dwProductVersionMS) == majorHi &&
+      LOWORD(fileInfo->dwProductVersionMS) == majorLo &&
+      HIWORD(fileInfo->dwProductVersionLS) == minorHi &&
+      LOWORD(fileInfo->dwProductVersionLS) == minorLo);
+}
+
 BWL_FUNCTION void OnInject() {
+  wchar_t bwPath[MAX_PATH];
+  HMODULE bwHandle = GetModuleHandle(NULL);
+  if (!bwHandle) {
+    return;
+  }
+  DWORD copied = GetModuleFileNameW(bwHandle, bwPath, sizeof(bwPath) / sizeof(wchar_t));
+  if (copied == 0) {
+    return;
+  }
+
+  int32 infoSize = GetFileVersionInfoSizeW(bwPath, nullptr);
+  if (infoSize == 0) {
+    return;
+  }
+  vector<byte> infoData(infoSize);
+  int result = GetFileVersionInfoW(bwPath, 0, infoData.size(), &infoData[0]);
+  if (result == 0) {
+    return;
+  }
+
+  uint32 length;
+  VS_FIXEDFILEINFO* fileInfo;
+  result = VerQueryValueW(&infoData[0], L"\\", reinterpret_cast<void**>(&fileInfo), &length);
+  if (result == 0 || length == 0) {
+    return;
+  }
+
   apm::DrawFn drawFn = []() {
     gameMonitor->Draw();
   };
@@ -90,6 +127,12 @@ BWL_FUNCTION void OnInject() {
   apm::OnActionFn onActionFn = [](const byte* actionType) {
     gameMonitor->OnAction(*actionType);
   };
-  gameMonitor.reset(new GameMonitor(apm::CreateV1161(drawFn, refreshFn, onActionFn)));
+
+  if (VersionsEqual(fileInfo, 1, 16, 1, 1)) {
+    gameMonitor.reset(new GameMonitor(apm::CreateV1161(drawFn, refreshFn, onActionFn)));
+  } else {
+    return;
+  }
+  
   gameMonitor->Start();
 }

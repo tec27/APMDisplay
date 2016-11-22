@@ -122,7 +122,7 @@ void GameMonitor::DrawGameTime() {
 const double APM_INTERVAL = 0.95;  // time after which actions are worth 1/e (in minutes)
 void GameMonitor::CalculateApm() {
   const uint32 timeMillis = bw_.gameTimeTicks * 42;
-  if (apmCalcTime_ != 0 && timeMillis <= (apmCalcTime_ + 500)) {
+  if (apmCalcTime_ != 0 && timeMillis <= (apmCalcTime_ + 250)) {
     return;
   }
 

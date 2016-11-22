@@ -95,6 +95,8 @@ struct BroodWar {
   DataOffset<uint32> myPlayerId;
   DataOffset<PlayerInfo> firstPlayerInfo;
   DataOffset<uint32> buildingsControlled;
+  // Population is maybe a bad term, it's really "number of controlled units" (e.g. overlords count
+  // as 1 as well)
   DataOffset<uint32> population;
   DataOffset<uint32> minerals;
   DataOffset<uint32> vespene;
@@ -212,7 +214,7 @@ inline BroodWar CreateV1170(uint32 baseAddress,
   bw.myPlayerId.reset(0x00509D64 - 0x00400000 + baseAddress);
   bw.firstPlayerInfo.reset(0x00673728 - 0x00400000 + baseAddress);
   bw.buildingsControlled.reset(0x006C5DC0 - 0x00400000 + baseAddress);
-  bw.population.reset(0x00586120 - 0x00400000 + baseAddress);
+  bw.population.reset(0x0012A134 + baseAddress);
   bw.minerals.reset(0x00527410 - 0x00400000 + baseAddress);
   bw.vespene.reset(0x00527440 - 0x00400000 + baseAddress);
   bw.firstPlayerColor.reset(0x0052A0F6 - 0x00400000 + baseAddress);

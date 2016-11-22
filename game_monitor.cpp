@@ -147,8 +147,7 @@ void GameMonitor::CalculateApm() {
       } else {
         uint8 playerColor = bw_.GetPlayerColor(i);
         apmStrings_[i] =
-          PlayerColorToTextColor(playerColor) + playerName + ": \x07" + std::to_string(apm) +
-          " - " + std::to_string(playerColor);
+          PlayerColorToTextColor(playerColor) + playerName + ": \x07" + std::to_string(apm);
       }
     } else {
       apmStrings_[i] = "";

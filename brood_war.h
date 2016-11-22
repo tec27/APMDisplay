@@ -91,7 +91,7 @@ struct BroodWar {
   DataOffset<bool> isInReplay;
   DataOffset<uint32> gameTimeTicks;
   DataOffset<uint32> lastTextWidth;
-  DataOffset<uint32> activeStormId;
+  DataOffset<uint32> activePlayerId;
   DataOffset<uint32> myPlayerId;
   DataOffset<PlayerInfo> firstPlayerInfo;
   DataOffset<uint32> buildingsControlled;
@@ -135,7 +135,7 @@ inline BroodWar CreateV1161(
   bw.isInReplay.reset(0x006D0F14);
   bw.gameTimeTicks.reset(0x0057F23C);
   bw.lastTextWidth.reset(0x006CE108);
-  bw.activeStormId.reset(0x0051267C);
+  bw.activePlayerId.reset(0x0051267C);
   bw.myPlayerId.reset(0x00512688);
   bw.firstPlayerInfo.reset(0x0057EEE0);
   bw.buildingsControlled.reset(0x00581F34);
@@ -183,6 +183,65 @@ inline BroodWar CreateV1161(
       call ecx
       popad
     }
+
+    return bw.lastTextWidth;
+  };
+
+  return bw;
+}
+
+inline BroodWar CreateV1170(uint32 baseAddress,
+  DrawFn drawFunction, RefreshFn refreshFunction, OnActionFn onActionFunction) {
+  BroodWar bw;
+
+  bw.drawDetour = std::move(sbat::Detour(sbat::Detour::Builder()
+    .At(0x0044641D - 0x00400000 + baseAddress).To(drawFunction).RunningOriginalCodeBefore()));
+  bw.refreshScreenDetour = std::move(sbat::Detour(sbat::Detour::Builder()
+    .At(0x00445701 - 0x00400000 + baseAddress).To(refreshFunction).RunningOriginalCodeBefore()));
+  bw.onActionDetour = std::move(sbat::Detour(sbat::Detour::Builder()
+    .At(0x00479068 -  0x00400000 + baseAddress)
+    .To(onActionFunction)
+    .WithArgument(sbat::RegisterArgument::Ecx) // action type
+    .RunningOriginalCodeAfter()));
+
+  bw.isInGame.reset(0x0066743D - 0x00400000 + baseAddress);
+  bw.isInReplay.reset(0x0067DCF0 - 0x00400000 + baseAddress);
+  bw.gameTimeTicks.reset(0x0052755C - 0x00400000 + baseAddress);
+  bw.lastTextWidth.reset(0x006D4170 - 0x00400000 + baseAddress);
+  bw.activePlayerId.reset(0x00509D58 - 0x00400000 + baseAddress);
+  bw.myPlayerId.reset(0x00509D64 - 0x00400000 + baseAddress);
+  bw.firstPlayerInfo.reset(0x00673728 - 0x00400000 + baseAddress);
+  bw.buildingsControlled.reset(0x006C5DC0 - 0x00400000 + baseAddress);
+  bw.population.reset(0x00586120 - 0x00400000 + baseAddress);
+  bw.minerals.reset(0x00527410 - 0x00400000 + baseAddress);
+  bw.vespene.reset(0x00527440 - 0x00400000 + baseAddress);
+  bw.firstPlayerColor.reset(0x0052A0F6 - 0x00400000 + baseAddress);
+
+  bw.curFont.reset(0x006D4148 - 0x00400000 + baseAddress);
+  bw.fontUltraLarge.reset(0x006D4158 - 0x00400000 + baseAddress);
+  bw.fontLarge.reset(0x006D4154 - 0x00400000 + baseAddress);
+  bw.fontNormal.reset(0x006D4150 - 0x00400000 + baseAddress);
+  bw.fontMini.reset(0x006D414C - 0x00400000 + baseAddress);
+
+  using SetFontFunc = void(__thiscall*)(BwFont font);
+  bw.SetFont = [baseAddress](BwFont font) {
+    const auto BwSetFont = reinterpret_cast<SetFontFunc>(0x004CF4F0 - 0x00400000 + baseAddress);
+    BwSetFont(font);
+  };
+  using DrawTextFunc = bool(__fastcall*)(uint32 x, uint32 y, const char* text);
+  bw.DrawText = [baseAddress](uint32 x, uint32 y, const std::string& text) {
+    const auto BwDrawText = reinterpret_cast<DrawTextFunc>(0x004CF2B0 - 0x00400000 + baseAddress);
+    BwDrawText(x, y, text.c_str());
+  };
+  using RefreshGameLayerFunc = bool(__cdecl*)();
+  bw.RefreshGameLayer =
+      reinterpret_cast<RefreshGameLayerFunc>(0x00445CF0 - 0x00400000 + baseAddress);
+  using GetTextWidthFunc = bool(__fastcall*)(const char* text);
+  bw.GetTextWidth = [baseAddress](const BroodWar& bw, const std::string& text) {
+    const auto BwGetTextWidth =
+        reinterpret_cast<GetTextWidthFunc>(0x004CE490 - 0x00400000 + baseAddress);
+    bw.lastTextWidth = 0;
+    BwGetTextWidth(text.c_str());
 
     return bw.lastTextWidth;
   };

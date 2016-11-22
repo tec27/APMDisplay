@@ -191,15 +191,15 @@ void GameMonitor::RefreshScreen() {
 
 const byte ACTION_TYPE_KEEPALIVE = 0x37;
 void GameMonitor::OnAction(byte actionType) {
-  if (bw_.activeStormId >= apmCounter_.size() || actionType == ACTION_TYPE_KEEPALIVE) {
+  if (bw_.activePlayerId >= apmCounter_.size() || actionType == ACTION_TYPE_KEEPALIVE) {
     return;
   }
 
-  apmCounter_[bw_.activeStormId] += 1;
+  apmCounter_[bw_.activePlayerId] += 1;
 }
 
 bool GameMonitor::IsObsMode() {
-  if (bw_.activeStormId == 0xFFFFFFFF) {
+  if (bw_.activePlayerId == 0xFFFFFFFF) {
     return bw_.isInReplay;
   } else {
     if (bw_.isInReplay) {

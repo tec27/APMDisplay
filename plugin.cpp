@@ -130,6 +130,9 @@ BWL_FUNCTION void OnInject() {
 
   if (VersionsEqual(fileInfo, 1, 16, 1, 1)) {
     gameMonitor.reset(new GameMonitor(apm::CreateV1161(drawFn, refreshFn, onActionFn)));
+  } else if (VersionsEqual(fileInfo, 1, 17, 0, 1)) {
+    gameMonitor.reset(new GameMonitor(apm::CreateV1170(
+        reinterpret_cast<uint32>(bwHandle), drawFn, refreshFn, onActionFn)));
   } else {
     return;
   }
